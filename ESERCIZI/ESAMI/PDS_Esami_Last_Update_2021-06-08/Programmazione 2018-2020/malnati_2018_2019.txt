@@ -1,0 +1,112 @@
+##################
+	05/07/2019
+##################
+
+
+1. Connect di QT
+
+
+2. Eccezioni in C++
+
+
+3. La uniquelock/uniqueptr è solo movibile o anche assegnabile?
+
+
+
+
+
+##################
+	24/07/2019
+##################
+
+
+1. Quali sono i vantaggi degli iteratori negli algoritmi della Standard Template Library (1pt)
+
+
+2. Descrivere il caricamento dinamico delle librerie sul sistema operativo Windows/Linux (1pt)
+
+
+3a. lambda: cos'è una chiusura, tutte le opzioni per catturare parametri pro e contro
+
+
+3b. Descrivere le funzioni lambda nell'ambito del linguaggio C++, e suggerire una strategia adottabile dal compilatore per implementare questa astrazione (2pt)
+
+
+4. Un sistema embedded riceve su due porte seriali sequenze di dati provenienti da due diversi sensori. Ciascun sensore genera i dati con cadenze variabili nel tempo e non predicibili, in quanto il processo di digitalizzazione al suo interno può richiedere più o meno tempo in funzione del dato letto. Ogni volta che il sistema riceve un nuovo valore su una delle due porte seriali, deve accoppiarlo con il dato più recente ricevuto sull'altra (se già presente) e inviarlo ad una fase successiva di computazione. Il sistema al proprio interno utilizza due thread differenti per leggere dalle due porte seriali e richiede l'uso di un oggetto di sincronizzazione in grado di
+implementare la logica descritta sopra. Tale oggetto offre la seguente interfaccia pubblica:
+
+class Synchronizer {
+public:
+ Synchronizer(std::function<void(float d1, float d2)> process);
+ void dataFromFirstPort(float d1);
+ void dataFromSecondPort(float d2);
+}
+
+All'atto della costruzione, viene fornita la funzione process(...) che rappresenta la fase successiva della computazione. Quando vengono invocati i metodi dataFromFirstPort(...) o dataFromSecondPort(...), se non è ancora presente il dato dalla porta opposta, questi si bloccano al proprio interno senza consumare CPU, in attesa del valore corrispondente. Al suo arrivo, viene invocata una sola volta la funzione process(...). Si implementi tale classe utilizzando le funzionalità offerte dallo standard C++.
+
+
+
+
+
+##################
+	06/09/2019
+##################
+
+
+1. Tutto sui metodi virtual
+
+
+2. primitive IPC in Windows
+
+
+3. Meccanismo di gestione degli eventi nel framework .NET/QT
+
+
+4. Gioco online tra due giocatori, gestione di più thread
+Implementare classe Challenge che aveva, oltre al costruttore, i seguenti metodi:
+-void accept( Boolean response)
+Indica il responso dello sfidato alla richiesta di giocare
+-void result1( int score)
+Indica lo score dello sfidante
+-void result2( int score)
+Indica lo score dello sfidato
+-int winner()
+Ritorna:
+-0 se è pari
+-1 se ha vinto lo sfidante
+-2 se ha vinto lo sfidato
+- -1 se la richiesta è stata rifiutata
+Accept deve precedere result1 e result2,  che invece non hanno ordine di chiamata tra loro, e tutti e 3 possono essere chiamati una sola volta, la violazione dei vincoli genera eccezione.
+Winner si mette in attesa senza consumare CPU se il gioco è in corso o non è ancora cominciato
+
+
+
+
+
+##################
+	20/01/2020
+##################
+
+1. IPC Windows
+
+
+2. Unique ptr
+
+
+3. Connect in QT
+
+
+4. È presente una classe Executor che ha il compito di rimanere in ascolto su una coda di funzioni da svolgere e si appoggia su una classe esterna Context
+
+class Executor {
+public:
+Executor(Context *ctx);
+~Executor();
+std::future<void> submit(std::function<void(Context*)> f);
+void shutdown();
+};
+
+Quando viene costruita la classe, viene generato un unico thread che ha il compito di estrarre le funzioni dalla coda, immesse tramite il metodo submit(), ed eseguirle. Esso termina quando viene chiamato il metodo shutdown() o il distruttore della classe.
+Le funzioni da svolgere vengono immesse tramite un metodo submit, che torna un oggetto future col risultato dell'elaborazione. Se il metodo viene chiamato quando è già stato chiamato il metodo shutdown, viene lanciata un'eccezione di tipo std::logic_error.
+Il metodo shutdown viene chiamato per terminare l'esecuzione, e se ci sono ancora delle funzioni in coda, esse vengono comunque svolte.
+Implementare la classe blabla
