@@ -1,4 +1,0 @@
-[package]
-edition = "2021"
-name = "affine-cipher"
-version = "2.0.0"

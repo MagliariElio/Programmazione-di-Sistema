@@ -1,7 +1,0 @@
-{
-    "blurb": "Rust has two string types: `String` and `&str`.",
-    "authors": [
-        "efx"
-    ],
-    "contributors": []
-}

@@ -1,0 +1,7 @@
+Allora
+ - Hai una struttura dati che contiene due interi da 16 bit (2byte). 
+Quindi occupa in tutto 4 byte. Al suo interno hai un option che contiene il 
+dato T da 2 byte più un campo tag che occuperà da 4 byte (8 byte con il dato)
+- Perché il Vector ha 2 campi. Len e capacity. 
+La len identifica la lunghezza mentre capacity la capacità massima del 
+vettore senza riallocare (per definizione sarà uguale a len o minore)

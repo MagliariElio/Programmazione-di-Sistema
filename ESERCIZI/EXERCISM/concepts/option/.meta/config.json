@@ -1,8 +1,0 @@
-{
-  "blurb": "Option<T>: a T which may or may not be there",
-  "authors": [
-    "seanchen1991",
-    "coriolinus"
-  ],
-  "contributors": []
-}

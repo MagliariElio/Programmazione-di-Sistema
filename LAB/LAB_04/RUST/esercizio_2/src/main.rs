@@ -32,12 +32,8 @@ impl CircularBuffer {
     fn insert(&mut self, value: i32) {
         if self.len < self.max_len {
             self.tape[self.ind_w] = value;
-            self.ind_w += 1;
+            self.ind_w = (self.ind_w + 1) % self.max_len;
             self.len += 1;
-        }
-
-        if self.ind_w >= self.max_len {
-            self.ind_w = 0;
         }
     }
 
@@ -47,13 +43,9 @@ impl CircularBuffer {
         while self.tape[self.ind_r] != -1 {
             result.push_str(format!("{} ", self.tape[self.ind_r]).as_str());
             self.tape[self.ind_r] = -1;
-            self.ind_r += 1;
+            self.ind_r = (self.ind_r + 1) % self.max_len;
             self.len -= 1;
-            if self.ind_r >= self.max_len {
-                self.ind_r = 0;
-            }
         }
-
         return result;
     }
 }

@@ -1,0 +1,80 @@
+[Dal canale Slack]
+
+Esempio di esercizio:
+Sia dato il seguente frammento di codice:
+
+enum Command {
+    Add(u8, u8),
+    Sub(u16),
+    Or(bool),
+    Clear
+}
+
+/* ... */
+let slice: &[Command] = &v[..];
+
+Usando il debugger si ottiene la seguente rappresentazione (memory_view.png):
+quanti elementi sono presenti nello slice e qual è il loro valore?
+
+Per verificare la vostra risposta, potete provare ad assegnare
+valori diversi alla variabile 'v' e verificare cosa il debugger vi mostra.
+
+-== [RISPOSTA] ==-
+Clear, Add(3, 2), Sub(10), Or(true) [2 volte]
+
+Tag e valori sono memorizzati da sinistra a destra, ma la rappresentazione 
+interna della memoria è little endian, quindi il singolo dato va da destra a sinistra
+
+Clear => Tag = 03 (1 byte) + 3 byte di padding per arrivare all'occupazione
+del campo più grande dell'enum:
+03 XX XX XX
+
+Add(3, 2) => Tag = 00 (1 byte) + Valore = 03 02 (2 byte) + 1 byte di padding:
+00 03 02 XX
+
+Sub(10) => Tag = 01 (1 byte) + 1 byte di padding + 0a 00 (2 byte, da leggere 0x000a):
+01 XX 0a 00
+
+Or(true) => Tag = 02 (1 byte) + 01 (true, 1 byte) + 2 byte di padding:
+02 01 XX XX
+
+Attenzione: i dati sono allineati alla potenza del 2 più vicina.
+E' per questo motivo che Sub(10) è stato rappresentato così e non
+01 0a 00 XX.
+
+Se avessi aggiunto un campo come Other(u32) (con n=12949),
+avrei avuto i seguenti byte in memoria:
+03 00 00 00 00 00 00 00
+00 03 02 00 00 00 00 00
+01 FF 0A 00 FF FF FF FF
+02 01 7F FF FF 7F 00 00
+04 00 00 00 95 32 00 00
+
+Dove 0A 00 è allineato come prima, mentre 12949 = 0x00003295 è stato allineato
+lasciando 3 byte di padding, dato che occupa 4 byte e uno di questi era già
+occupato dal tag.
+
+In sostanza, gli u16 sono allineati a gruppi di 2 byte, gli u32 a gruppi di 4, ecc.
+
+Se avessi aggiunto un campo come AnotherOne(u64) (con n=11),
+avrei avuto i seguenti byte in memoria:
+[05] [00 00 00 00 00 00 00] [0B 00 00 00 00 00 00 00]
+ ^      ^                     ^
+ |      |                     |
+tag  padding                valore (da leggere 0x000000000000000B)
+
+-== [NOTE] ==-
+Cosa succederebbe con AndAnotherOne(u32, u16)?
+In teoria, dovrei avere:
+- 1 byte di tag
+- 3 byte di padding per allineare al prossimo blocco da 4 byte
+- 4 byte di valore u32
+- 2 byte di valore u16
+10 byte occupati! (non c'è bisogno di allineare l'enum ad una potenza del 2)
+In questi casi, il compilatore ottimizza l'occupazione della memoria
+scambiando u16 con u32 e ottenendo:
+- 1 byte di tag
+- 1 byte di padding per allineare al prossimo blocco da 2 byte
+- 2 byte di valore u16
+- 4 byte di valore u32
+Solo 8 byte!
