@@ -1,0 +1,155 @@
+dati questi problemi, analizzali e generami un problema simile:
+
+-------------
+problema 1
+Un paradigma frequentemente usato nei sistemi reattivi e costituito dall'astrazione detta Looper.
+Quando viene creato, un Looper crea una coda di oggetti generici di tipo Message ed un thread.
+II thread attende - senza consumare cicli di CPU - che siano presenti messaggi nella coda,
+li estrae a uno a uno nell'ordine di arrivo, e li elabora.
+
+II costruttore di Looper riceve due parametri, entrambi di tipo (puntatore a) funzione: process( ... ) e cleanup().
+La prima è una funzione responsabile di elaborare i singoli messaggi ricevuti attraverso la coda;
+tale funzione accetta un unico parametro in ingresso di tipo Message e non ritorna nulla;
+La seconda e funzione priva di argomenti e valore di ritorno e verra invocata dal thread incapsulato
+nel Looper quando esso stara per terminare.
+
+Looper offre un unico metodo pubblico, thread safe, oltre a quelli di servizio, necessari per gestirne ii ciclo di vita:
+send(msg), che accetta come parametro un oggetto generico di tipo Message che verra inserito nella coda
+e successivamente estratto dal thread ed inoltrato alla funzione di elaborazione.
+Quando un oggetto Looper viene distrutto, occorre fare in modo che ii thread contenuto al suo interno
+invochi la seconda funzione passata nel costruttore e poi termini.
+
+Si implementi, utilizzando il linguaggio Rust o C++, tale astrazione tenendo conto che i suoi
+ metodi dovranno essere thread-safe.
+ -------------
+ 
+ problema 2
+ All'interno di un programma è necessario garantire che non vengano eseguite CONTEMPORANEAMENTE più di N invocazioni di operazioni potenzialmente lente.
+A questo scopo, è stata definita la struttura dati ExecutionLimiter che viene inizializzata con il valore N del limite. 
+Tale struttura è thread-safe e offre solo il metodo pubblico generico execute( f ), che accetta come unico parametro una funzione f, priva di parametri 
+che ritorna il tipo generico R. Il metodo execute(...) ha, come tipo di ritorno, lo stesso tipo R restituito da f ed ha il compito di mantere il conteggio
+di quante invocazioni sono in corso. Se tale numero è già pari al valore N definito all'atto della costruzione della struttura dati, attende, senza provocare 
+consumo di CPU, che scenda sotto soglia, dopodiché invoca la funzione f ricevuta come parametro e ne restituisce il valore. Poiché l'esecuzione della funzione f 
+potrebbe fallire, in tale caso, si preveda di decrementare il conteggio correttamente. Si implementi, usando i linguaggi Rust o C++, tale struttura dati, 
+garantendo tutte le funzionalità richieste.use std::sync::{Arc, Condvar, Mutex};
+*/
+
+/*
+COMMENTO ALLA SOLUZIONE:
+Attenzione: eseguendo il programma saranno riscontrati dei PANIC: essi sono scatenati tramite la macro panic! nella funzione very_slow_print e sono intenzionali, e aderenti alle richieste
+-----------
+
+problema 3
+In un sistema concorrente, ciascun thread può pubblicare eventi per rendere noto ad altri thread quanto sta facendo.
+Per evitare un accoppiamento stretto tra mittenti e destinatari degli eventi, si utilizza un Dispatcher: questo è un oggetto thread-safe che offre il metodo
+
+        dispatch(msg: Msg)
+
+mediante il quale un messaggio di tipo generico Msg (soggetto al vincolo di essere clonabile) viene reso disponibile a chiunque si sia sottoscritto.
+Un thread interessato a ricevere messaggi può invocare il metodo
+
+        subscribe()
+
+del Dispatcher: otterrà come risultato un oggetto di tipo Subscription mediante il quale potrà leggere i messaggi che da ora in poi saranno pubblicati attraverso
+il Dispatcher. Per ogni sottoscrizione attiva, il Dispatcher mantiene internamente l'equivalente di una coda ordinata (FIFO) di messaggi non ancora letti.
+A fronte dell'invocazione del metodo dispatch(msg:Msg), il messaggio viene clonato ed inserito in ciascuna delle code esistenti. L'oggetto Subscription offre il
+metodo bloccante
+
+        read() -> Option<Msg>
+
+se nella coda corrispondente è presente almeno un messaggio, questo viene rimosso e restituito; se nella coda non è presente nessun messaggio e il Dispatcher esiste
+ancora, l'invocazione si blocca fino a che non viene inserito un nuovo messaggio; se invece il Dispatcher è stato distrutto, viene restituito il valore corrispondente
+all'opzione vuota.
+
+Gli oggetti Dispatcher e Subscription sono in qualche modo collegati, ma devono poter avere cicli di vita indipendenti: la distruzione del Dispatcher non deve impedire la
+consumazione dei messaggi già recapitati ad una Subscription, ma non ancora letti; parimenti, la distruzione di una Subscription non deve impedire al Dispatcher di
+consegnare ulteriori messaggi alle eventuali altre Subscription presenti.
+
+Si implementino le strutture dati Dispatcher e Subscription, a scelta, nel linguaggio Rust o C++11.
+-------------
+
+problema 3
+Un componente con funzionalità di cache permette di ottimizzare il comportamento di un sistema riducendo il numero di volte in cui una funzione è invocata,
+tenendo traccia dei risultati da essa restituiti a fronte di un particolare dato in ingresso. Per generalità, si assuma che la funzione accetti un dato di
+tipo generico K e restituisca un valore di tipo generico V.
+
+Il componente offre un unico metodo get(...) che prende in ingresso due parametri, il valore k (di tipo K, clonabile) del parametro e la funzione f (di tipo K -> V)
+responsabile della sua trasformazione, e restituisce uno smart pointer clonabile al relativo valore.
+
+Se, per una determinata chiave k, non è ancora stato calcolato il valore corrispondente, la funzione viene invocata e ne viene restituito il risultato;
+altrimenti viene restituito il risultato già trovato.
+
+Il componente cache deve essere thread-safe perché due o più thread possono richiedere contemporaneamente il valore di una data chiave: quando questo avviene e il dato
+non è ancora presente, la chiamata alla funzione dovrà essere eseguita nel contesto di UN SOLO thread, mentre gli altri dovranno aspettare il risultato in corso di
+elaborazione, SENZA CONSUMARE cicli macchina.
+
+Si implementi tale componente a scelta nei linguaggi C++ o Rust.
+---------------
+
+problema 4
+Una barriera è un costrutto di sincronizzazione usato per regolare l'avanzamento relativo della computazione di più thread. 
+All'atto della costruzione di questo oggetto, viene indicato il numero N di thread coinvolti. 
+
+Non è lecito creare una barriera che coinvolga meno di 2 thread. 
+
+La barriera offre un solo metodo, wait(), il cui scopo è bloccare temporaneamente l'esecuzione del thread che lo ha invocato, non ritornando fino a che non sono giunte 
+altre N-1 invocazioni dello stesso metodo da parte di altri thread: quando ciò succede, la barriera si sblocca e tutti tornano. Successive invocazioni del metodo wait() 
+hanno lo stesso comportamento: la barriera è ciclica.
+
+Attenzione a non mescolare le fasi di ingresso e di uscita!
+
+Una RankingBarrier è una versione particolare della barriera in cui il metodo wait() restituisce un intero che rappresenta l'ordine di arrivo: il primo thread ad avere 
+invocato wait() otterrà 1 come valore di ritorno, il secondo thread 2, e così via. All'inizio di un nuovo ciclo, il conteggio ripartirà da 1.
+
+Si implementi la struttura dati RankingBarrier a scelta nei linguaggi Rust o C++ '11 o successivi.
+--------------
+
+problema 5
+La struct MpMcChannel<E: Send> è una implementazione di un canale su cui possono scrivere molti produttori e da cui possono attingere valori molti consumatori.
+Tale struttura offre i seguenti metodi: 
+    
+    new(n: usize) -> Self    //crea una istanza del canale basato su un buffer circolare di "n" elementi 
+    
+    send(e: E) -> Option<()>    //invia l'elemento "e" sul canale. Se il buffer circolare è pieno, attende 
+                                //senza consumare CPU che si crei almeno un posto libero in cui depositare il valore
+                                //Ritorna:
+                                    // - Some(()) se è stato possibile inserire il valore nel buffer circolare 
+                                    // - None se il canale è stato chiuso (Attenzione: la chiusura può avvenire anche 
+                                    //    mentre si è in attesa che si liberi spazio) o se si è verificato un errore interno 
+                                    
+    recv() -> Option<E>         //legge il prossimo elemento presente sul canale. Se il buffer circolare è vuoto, 
+                                //attende senza consumare CPU che venga depositato almeno un valore
+                                //Ritorna: 
+                                    // - Some(e) se è stato possibile prelevare un valore dal buffer 
+                                    // - None se il canale è stato chiuso (Attenzione: se, all'atto della chiusura sono 
+                                    //    già presenti valori nel buffer, questi devono essere ritornati, prima di indicare 
+                                    //    che il buffer è stato chiuso; se la chiusura avviene mentre si è in attesa di un 
+                                    //    valore, l'attesa si sblocca e viene ritornato None) o se si è verificato un errore interno. 
+
+    shutdown() -> Option<()>    //chiude il canale, impedendo ulteriori invii di valori. 
+                                //Ritorna: 
+                                    // - Some(()) per indicare la corretta chiusura 
+                                    // - None in caso di errore interno all'implementazione del metodo.
+                                    
+Si implementi tale struttura dati in linguaggio Rust, senza utilizzare i canali forniti dalla libreria standard né da altre librerie, avendo cura di garantirne
+la correttezza in presenza di più thread e di non generare la condizione di panico all'interno dei suoi metodi.
+------------
+
+problema 6
+	Una DelayedQueue<T:Send> è un particolare tipo di coda non limitata che offre tre metodi
+    principali, oltre alla funzione costruttrice:
+        1. offer(&self, t:T, i: Instant) : Inserisce un elemento che non potrà essere estratto prima
+           dell'istante di scadenza i.
+        2. take(&self) -> Option<T>: Cerca l'elemento t con scadenza più ravvicinata: se tale
+           scadenza è già stata oltrepassata, restituisce Some(t); se la scadenza non è ancora stata
+           superata, attende senza consumare cicli di CPU, che tale tempo trascorra, per poi restituire
+           Some(t); se non è presente nessun elemento in coda, restituisce None. Se, durante l'attesa,
+           avviene un cambiamento qualsiasi al contenuto della coda, ripete il procedimento suddetto
+           con il nuovo elemento a scadenza più ravvicinata (ammesso che ci sia ancora).
+        3. size(&self) -> usize: restituisce il numero di elementi in coda indipendentemente dal fatto
+           che siano scaduti o meno.
+    Si implementi tale struttura dati nel linguaggio Rust, avendo cura di renderne il comportamento
+    thread-safe. Si ricordi che gli oggetti di tipo Condvar offrono un meccanismo di attesa limitata nel
+    tempo, offerto dai metodi wait_timeout(...) e wait_timeout_while(...)).
+------------
+ 
